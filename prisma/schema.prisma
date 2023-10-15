@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id String @id @default(uuid()) 
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ // ? added to the end will make the field optional
+ clerkId String @unique
+ email String @unique
+ 
+  journalEntries JournalEntry[] 
+
+}
+
+model JournalEntry {
+  id String @id @default(uuid())
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ content String @db.Text
+ userId String  
+ user User @relation(fields: [userId], references: [id])
+
+  analysis Analysis?
+ @@unique([userId, id])
+}
+
+// Model is basically like creating a seed file for your database. It is a blueprint for what you want your database to look like.
+model Analysis {
+  id String @id @default(uuid())
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+
+journalEntryId String
+// This is a reference line which is named journal the name can be anything, but you can use it to reference the journal entry with the analysis. Basically join quieries.
+
+// the "@relation" is the name of the field in the other model that you are referencing and what value will equal that in the current model.
+journal JournalEntry @relation(fields:[journalEntryId], references:[id], onDelete: Cascade)
+
+mood String
+summary String @db.Text
+color String 
+negative Boolean 
+subject String
+@@unique([journalEntryId])
+}
