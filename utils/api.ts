@@ -11,7 +11,6 @@ export async function createNewEntry() {
 
   if (response.ok) {
     const data = await response.json();
-    console.log("DATA OBJECT:", data);
     return data.data;
   }
 }
@@ -31,5 +30,24 @@ export async function updateEntry(id: string, content: string) {
     }
   } catch (e) {
     console.log(e);
+  }
+}
+
+export async function askQuestion(question: string) {
+  try {
+    // Make a fetch request to the question endpoint
+    const res = await fetch("/api/question", {
+      method: "POST",
+      body: JSON.stringify({ question }),
+    });
+    // If the response is good then we will get back the question data
+    if (res.ok) {
+      // Parse the response
+      const data = await res.json();
+      // Because the data is nested in the data object we have to return that data.data
+      return data.data;
+    }
+  } catch (e) {
+    console.log(e.message);
   }
 }

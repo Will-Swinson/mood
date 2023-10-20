@@ -2,12 +2,21 @@ import z from "zod";
 import { StructuredOutputParser } from "langchain/output_parsers";
 import { OpenAI } from "langchain/llms/openai";
 import { PromptTemplate } from "langchain/prompts";
+import { Document } from "langchain/document";
+import { loadQARefineChain } from "langchain/chains";
+import { OpenAIEmbeddings } from "langchain/embeddings/openai";
+import { MemoryVectorStore } from "langchain/vectorstores/memory";
 
 // define the schema for the output
 // this is what the AI will be generating
 // This will also filter out the output to only include the fields we want
 const parser = StructuredOutputParser.fromZodSchema(
   z.object({
+    sentimentScore: z
+      .number()
+      .describe(
+        "sentiment of the text and rated on a scale from -10 to 10, where -10 is extremely negative, 0 is neutral, and 10 is extremely positive."
+      ),
     mood: z
       .string()
       .describe("the mood of the person who wrote the journal entry."),
@@ -66,4 +75,35 @@ export async function analyze(content: string) {
     throw new Error(err.message);
   }
   console.log("RESULT:", result);
+}
+
+// Using vector database to store the question
+// All the entries  will be stored in the database, BUT we are using in memory in this scenario so we have to store these entries every time
+// Which will then be used to generate the prompt
+export async function qa(question, entries) {
+  // creating a new document for each entry so the AI can analyze it
+  const docs = entries.map((entry) => {
+    return new Document({
+      pageContent: entry.content,
+      metadata: { id: entry.id, createdAt: entry.createdAt },
+    });
+  });
+
+  // creating the AI instance
+  const model = new OpenAI({ temperature: 0, modelName: "gpt-3.5-turbo" });
+  // creating a chain to loop of the question entries and update them sometimes as neccessary, a chain links different AI's together like a output to an input
+  // Almost like summarizing the data and then refining it into a perfect summary
+  const chain = loadQARefineChain(model);
+  // this is a function that can be used for a chain to create embeddings AKA a vector of the data, basically you're sending this data to OPEN AI to receive back some vectors
+  const embeddings = new OpenAIEmbeddings();
+  // This is going to create our store of vectors for us in memory
+  const store = await MemoryVectorStore.fromDocuments(docs, embeddings);
+
+  // Takes the question you're asking and takes all the closest documents to it using the vectors and returns the relvant documents
+  const relavantDocs = await store.similaritySearch(question);
+  // This will then make the call to the AI with the given data and return the result
+  const res = await chain.call({ input_documents: relavantDocs, question });
+
+  // which then we can return the result with the output_text method
+  return res.output_text;
 }

@@ -19,6 +19,7 @@ export async function POST() {
   // Which then we can save the analysis to the database
   await prisma.analysis.create({
     data: {
+      userId: user.id,
       journalEntryId: entry.id,
       ...analysis,
     },

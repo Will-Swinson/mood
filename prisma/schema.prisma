@@ -20,6 +20,7 @@ model User {
  email String @unique
  
   journalEntries JournalEntry[] 
+  analyses Analysis[]
 
 }
 
@@ -42,15 +43,22 @@ model Analysis {
  updatedAt DateTime @updatedAt
 
 journalEntryId String
+userId String
 // This is a reference line which is named journal the name can be anything, but you can use it to reference the journal entry with the analysis. Basically join quieries.
 
 // the "@relation" is the name of the field in the other model that you are referencing and what value will equal that in the current model.
 journal JournalEntry @relation(fields:[journalEntryId], references:[id], onDelete: Cascade)
+userInfo User @relation(fields:[userId], references: [id], onDelete: Cascade)
 
 mood String
 summary String @db.Text
 color String 
 negative Boolean 
 subject String
+sentimentScore Float @default(0)
+// Unique means that every data column will have a unique value and cannot be repeated of what you enter in the unique array
 @@unique([journalEntryId])
+// Index has no restrictions and means that multiple columns of data can have this value in multiple places and it will be valid
+@@index([userId])
+
 }

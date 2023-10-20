@@ -66,6 +66,7 @@ export async function PUT(request: Request, { params: { id } }: Params) {
     create: {
       // updating the analysis with the new analysis
       // using instant destructuring with await
+      userId: user.id,
       journalEntryId: updatedEntry.id,
       ...updatedAnalysis,
     },
