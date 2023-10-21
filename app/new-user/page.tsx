@@ -14,10 +14,10 @@ async function createNewUser() {
   });
 
   if (!match) {
-    const newUser = await prisma.user.create({
+    await prisma.user.create({
       data: {
-        clerkId: user.id as string,
-        email: user?.emailAddresses[0].emailAddress as string,
+        clerkId: user.id,
+        email: user?.emailAddresses[0].emailAddress,
       },
     });
   }
